@@ -73,6 +73,27 @@ body {
 button, textarea { font: inherit; }
 button { cursor: pointer; transition: transform .12s ease, filter .15s ease, background-color .15s ease, border-color .15s ease, box-shadow .15s ease; }
 button:not(:disabled):active { transform: translateY(1px); }
+
+.language-toggle {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+}
+.language-toggle button {
+  min-width: 36px;
+  min-height: 30px;
+  padding: 0 9px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.language-toggle button.active { background: var(--gold); color: #20190f; }
 button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 
 h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: .02em; }

@@ -3,6 +3,8 @@
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { FeedbackWidget } from "@/components/FeedbackWidget";
+import { LanguageToggle, useLanguage } from "@/components/LanguageToggle";
+import { LocalizedText } from "@/components/LocalizedText";
 import { IdentityTagsPanel } from "@/components/IdentityTagsPanel";
 import { LaunchHistory } from "@/components/LaunchHistory";
 import { MissionPager } from "@/components/MissionPager";
@@ -135,6 +137,7 @@ function persistState(nextState: GameState) {
 }
 
 export default function Home() {
+  const { language, setLanguage } = useLanguage();
   const [screen, setScreen] = useState<Screen>("home");
   const [setupCount, setSetupCount] = useState(8);
   const [setupRoles, setSetupRoles] = useState<Record<RoleKey, boolean>>(togglesFor(8));
@@ -403,8 +406,9 @@ export default function Home() {
                 <nav className="app-nav top-nav">
                   <div className="brand"><span className="brand-mark">A</span><span>Avalon Note</span></div>
                   <div className="top-nav-links">
-                    <button className="nav-link" onClick={() => goTo("rules")}>规则</button>
-                    <button className="icon-btn" aria-label="切换主题" onClick={toggleTheme}>{theme === "dark" ? "☀️" : "🌙"}</button>
+                    <button className="nav-link" onClick={() => goTo("rules")}>{language === "zh" ? "规则" : "Rules"}</button>
+                    <LanguageToggle language={language} onChange={setLanguage} />
+                    <button className="icon-btn" aria-label={language === "zh" ? "切换主题" : "Toggle theme"} onClick={toggleTheme}>{theme === "dark" ? "☀️" : "🌙"}</button>
                   </div>
                 </nav>
 
@@ -419,9 +423,9 @@ export default function Home() {
                     <line x1="328" y1="72" x2="72" y2="328" stroke="currentColor" strokeWidth="1" />
                   </svg>
                   <div className="hero-content">
-                    <span className="eyebrow">线下阿瓦隆 · 现场记录</span>
-                    <h1 className="home-title">阿瓦隆笔记本</h1>
-                    <p className="home-subtitle">记录组队、投票与任务结果，全部数据只保存在本机。</p>
+                    <span className="eyebrow">{language === "zh" ? "线下阿瓦隆 · 现场记录" : "Avalon at the table · Game log"}</span>
+                    <h1 className="home-title">{language === "zh" ? "阿瓦隆笔记本" : "Avalon Note"}</h1>
+                    <p className="home-subtitle">{language === "zh" ? "记录组队、投票与任务结果，全部数据只保存在本机。" : "Track teams, votes, and mission results. All data stays on this device."}</p>
                     <div className="hero-actions">
                       {continueFromSaveEnabled && savedSummary && !savedSummary.finished && (
                         <button className="primary-btn" onClick={continueGame}>继续当前对局</button>
@@ -430,7 +434,7 @@ export default function Home() {
                         className={continueFromSaveEnabled && savedSummary && !savedSummary.finished ? "ghost-btn" : "primary-btn"}
                         onClick={startNewGame}
                       >
-                        新开一局
+                        {language === "zh" ? "新开一局" : "Start a game"}
                       </button>
                     </div>
                     {continueFromSaveEnabled && savedSummary && !savedSummary.finished && (
@@ -736,6 +740,7 @@ export default function Home() {
       )}
       <TutorialGuide open={tourOpen && activeScreen === "record"} steps={tutorialSteps} onClose={closeTour} />
       <FeedbackWidget screen={screen} />
+      <LocalizedText language={language} />
     </main>
   );
 }
