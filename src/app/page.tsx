@@ -84,6 +84,11 @@ const tutorialSteps: TutorialStep[] = [
     description: "这里展示五轮任务的进展。完成任务后，可点击对应任务回看当轮的组队、投票与任务结果。"
   },
   {
+    selector: '[data-tour="seat-layout"]',
+    title: "贴合现场座位",
+    description: "现场座位与默认圆桌不一致时，可进入编辑模式拖动座位；调整只改变显示位置，不会改动组队和投票记录。"
+  },
+  {
     selector: '[data-tour="identity-tags"]',
     title: "身份推测卡",
     description: "这里用于记录您对玩家身份的推测。请先选择一个身份标签，再点击对应座位，即可从当前任务起标记该玩家。"
@@ -106,7 +111,7 @@ const tutorialSteps: TutorialStep[] = [
   {
     selector: '[data-tour="quick-record"]',
     title: "跳过详细记录",
-    description: "现场来不及逐项记录时，可在页面底部使用这里，跳过组队、投票和任务牌数量，只保存本轮任务成功或失败。"
+    description: "现场来不及继续逐项记录时，可在页面底部只补记本轮任务成功或失败；已选出的上车队伍，以及此前已经保存的组队与投票记录都会继续保留。"
   }
 ];
 
@@ -575,7 +580,7 @@ export default function Home() {
                 {isLiveMissionView ? (
                   <div className={missionCardClass(state.missionResults[state.currentMission])}>
                     {state.rejectStreak > 0 && <div className="reset-banner">已连续 {state.rejectStreak} 次组队被否决{state.rejectStreak >= 4 ? "，本次为强制轮，将直接出发不再表决" : ""}</div>}
-                    <div className="seat-layout-bar">
+                    <div className="seat-layout-bar" data-tour="seat-layout">
                       <button
                         className={editingSeats ? "primary-btn seat-layout-btn" : "ghost-btn seat-layout-btn"}
                         onClick={() => setEditingSeats((on) => !on)}

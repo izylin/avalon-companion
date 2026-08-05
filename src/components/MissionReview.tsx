@@ -153,10 +153,33 @@ export function MissionReview({
       )}
 
       {finalLog?.resultOnly ? (
-        <div className="result-only-review">
-          <strong>本轮为快速记录</strong>
-          <span>已跳过组队、投票和任务牌数量，只保存任务成功或失败。</span>
-        </div>
+        <>
+          <div className="result-only-review">
+            <strong>本轮为快速记录</strong>
+            <span>{finalLog.team.length > 0
+              ? "已保留上车队伍；未记录投票和任务牌数量。"
+              : "已跳过组队、投票和任务牌数量，只保存任务成功或失败。"}</span>
+          </div>
+          {finalLog.team.length > 0 && (
+            <>
+              <SeatSvg
+                n={state.playerCount}
+                leaderSeat={finalLog.leaderSeat}
+                selfSeat={state.selfSeat}
+                seatNames={state.seatNames}
+                teamSeats={finalLog.team}
+                voteMap={{}}
+                identityTags={effectiveIdentityTags(state, missionIndex)}
+                captionTop={`队长 ${leaderText}`}
+                captionBottom={`上车 ${finalLog.team.map((s) => seatLabel(s, false)).join(",")}`}
+              />
+              <div className="mission-table">
+                <div className="mission-table-row"><span>队伍</span><strong>{finalLog.team.map((s) => seatLabel(s)).join("、")}</strong></div>
+                <div className="mission-table-row"><span>投票</span><strong>未记录</strong></div>
+              </div>
+            </>
+          )}
+        </>
       ) : finalLog ? (
         <>
           <SeatSvg
