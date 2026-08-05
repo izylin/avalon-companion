@@ -67,6 +67,12 @@ npm run start    # 启动生产服务器
 npm run lint     # ESLint 检查
 ```
 
+## 部署学习文档
+
+面向第一次接触 GitHub、Next.js 和 Vercel 的学习者，项目提供了一套独立的 GitBook 教程：从 Fork 自己的仓库开始，完成本地验证、首次部署、自动部署和可选的反馈环境变量配置。
+
+从 [`docs/README.md`](docs/README.md) 开始学习；GitBook 目录由 [`docs/SUMMARY.md`](docs/SUMMARY.md) 管理。
+
 ## 反馈收集配置
 
 右下角的「反馈」按钮会截取当前页面，允许用户框选、画箭头、自由圈画或遮盖敏感区域，然后将文字、标注截图与页面上下文创建为 GitHub Issue。复制 `.env.example` 为 `.env.local` 并填写：
