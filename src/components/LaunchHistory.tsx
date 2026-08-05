@@ -56,7 +56,11 @@ export function LaunchHistory({
             <div className="launch-head">
               <div>
                 <h4>{log.resultOnly ? "快速记录" : `第 ${log.round} 次组队 · ${seatLabel(log.leaderSeat)}队长`}</h4>
-                <p>{log.resultOnly ? "未记录组队与投票详情" : `队伍：${log.team.map(seatLabel).join(", ")}`}</p>
+                <p>{log.resultOnly
+                  ? log.team.length > 0
+                    ? `队伍：${log.team.map(seatLabel).join(", ")}；未记录投票详情`
+                    : "未记录组队与投票详情"
+                  : `队伍：${log.team.map(seatLabel).join(", ")}`}</p>
               </div>
               <div className="launch-head-actions">
                 <span className={`tag ${log.missionResult === "good" ? "blue" : log.missionResult === "bad" || !log.passed ? "bad" : ""}`}>{log.missionResult === "good" ? "好人任务成功" : log.missionResult === "bad" ? "坏人任务成功" : log.passed ? "已通过表决" : "未通过"}</span>

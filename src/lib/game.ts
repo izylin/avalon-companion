@@ -489,8 +489,11 @@ export function completeMissionLaunch(current: GameState, result: "good" | "bad"
 }
 
 /**
- * 产品需求 #34：现场来不及逐项记录时，整轮只保留“任务成功 / 失败”。
- * 当前任务已有的临时组队或投票记录会被替换，避免回顾页展示不完整详情。
+ * 产品需求 #34 / #47：现场来不及逐项记录时，只补一条“任务成功 / 失败”。
+ *
+ * 已经结算过的组队与投票属于有效历史，不能因为随后使用快速记录而被删除。
+ * 若当前已经选出上车队伍、但还没录入投票，也要把这支队伍保留下来。
+ * 因此这里只替换同一任务旧的 resultOnly 记录，并保留所有详细发车记录。
  */
 export function recordMissionResultOnly(current: GameState, result: "good" | "bad") {
   const missionNo = current.currentMission + 1;
@@ -498,7 +501,7 @@ export function recordMissionResultOnly(current: GameState, result: "good" | "ba
     missionNo,
     round: Math.min(5, current.rejectStreak + 1),
     leaderSeat: current.leaderIndex + 1,
-    team: [],
+    team: [...current.pickedTeam],
     votes: {},
     passed: true,
     missionResult: result,
@@ -509,7 +512,7 @@ export function recordMissionResultOnly(current: GameState, result: "good" | "ba
   return {
     ...current,
     launchLog: [
-      ...current.launchLog.filter((log) => log.missionNo !== missionNo),
+      ...current.launchLog.filter((log) => !(log.missionNo === missionNo && log.resultOnly)),
       minimalLog
     ]
   };

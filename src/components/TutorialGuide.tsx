@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 export type TutorialStep = {
@@ -38,7 +38,21 @@ export function TutorialGuide({
   const [rect, setRect] = useState<SpotlightRect | null>(null);
   const [tooltipSize, setTooltipSize] = useState({ width: 344, height: 218 });
   const tooltipRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+  const titleId = useId();
+  const descriptionId = useId();
   const step = steps[stepIndex];
+
+  useEffect(() => {
+    if (!open) return;
+    previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const frame = requestAnimationFrame(() => tooltipRef.current?.focus());
+    return () => {
+      cancelAnimationFrame(frame);
+      previousFocusRef.current?.focus();
+      previousFocusRef.current = null;
+    };
+  }, [open]);
 
 
   useEffect(() => {
@@ -113,6 +127,20 @@ export function TutorialGuide({
       } else if (event.key === "ArrowLeft") {
         event.preventDefault();
         setStepIndex((index) => Math.max(index - 1, 0));
+      } else if (event.key === "Tab" && tooltipRef.current) {
+        const focusable = Array.from(
+          tooltipRef.current.querySelectorAll<HTMLElement>('button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])')
+        );
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
       }
     }
     window.addEventListener("keydown", onKeyDown);
@@ -160,7 +188,7 @@ export function TutorialGuide({
   } : null;
 
   return createPortal(
-    <div className="tour-root" role="dialog" aria-modal="true" aria-label="新手操作指引">
+    <div className="tour-root" role="dialog" aria-modal="true" aria-labelledby={titleId} aria-describedby={descriptionId}>
       {padded ? (
         <>
           <div className="tour-shade" style={{ inset: `0 0 auto 0`, height: padded.top }} />
@@ -192,6 +220,7 @@ export function TutorialGuide({
         ref={tooltipRef}
         className={`tour-card tour-card-${layout.placement}`}
         style={{ left: layout.left, top: layout.top }}
+        tabIndex={-1}
       >
         {layout.placement !== "center" && (
           <span className="tour-arrow" style={{ left: layout.arrowLeft }} aria-hidden="true" />
@@ -200,8 +229,8 @@ export function TutorialGuide({
           <span className="tour-kicker">操作指引 · {stepIndex + 1}/{steps.length}</span>
           <button className="tour-close" type="button" aria-label="关闭指引" onClick={finishTour}>×</button>
         </div>
-        <h2>{step.title}</h2>
-        <p>{step.description}</p>
+        <h2 id={titleId}>{step.title}</h2>
+        <p id={descriptionId}>{step.description}</p>
         <div className="tour-progress" aria-hidden="true">
           {steps.map((_, index) => <i key={index} className={index === stepIndex ? "active" : ""} />)}
         </div>
