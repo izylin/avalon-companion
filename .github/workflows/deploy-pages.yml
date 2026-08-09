@@ -8,7 +8,7 @@ on:
     paths:
       - "course/**"
       - "docs/**"
-      - "pages/**"
+      - "static-site/**"
       - ".github/workflows/deploy-pages.yml"
   workflow_dispatch: {}
 
@@ -32,15 +32,15 @@ jobs:
         run: |
           set -e
           mkdir -p _site
-          cp pages/index.html _site/index.html
+          cp static-site/index.html _site/index.html
 
           mkdir -p _site/course
           cp -r course/* _site/course/
 
           mkdir -p _site/docs
           cp -r docs/* _site/docs/
-          cp pages/docsify-index.html _site/docs/index.html
-          cp pages/docsify-sidebar.md _site/docs/_sidebar.md
+          cp static-site/docsify-index.html _site/docs/index.html
+          cp static-site/docsify-sidebar.md _site/docs/_sidebar.md
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
