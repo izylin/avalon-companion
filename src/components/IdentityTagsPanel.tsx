@@ -1,4 +1,5 @@
 import { roleKeys, roles, type GameState, type IdentityTag } from "@/lib/game";
+import { useI18n } from "@/lib/i18n";
 
 function RoleSymbol({ role }: { role: IdentityTag }) {
   return (
@@ -54,30 +55,31 @@ export function IdentityTagsPanel({
   selectedTag: IdentityTag | null;
   onSelect: (tag: IdentityTag | null) => void;
 }) {
+  const { locale, text } = useI18n();
   const enabledRoles = roleKeys.filter((key) => state.roleToggle[key]);
   const taggedSeatsByRole = enabledRoles.reduce<Record<string, string>>((acc, key) => {
     const seats = Object.entries(activeTags)
       .filter(([, tag]) => tag === key)
-      .map(([seat]) => seat === "1" ? "我" : seat);
+      .map(([seat]) => seat === "1" ? text("我", "Me") : seat);
     if (seats.length) acc[key] = seats.join(",");
     return acc;
   }, {});
 
   return (
     <div className="identity-panel" data-tour="identity-tags">
-      <div className="section-title"><h3>身份标签</h3><span className="tag blue">{selectedTag ? "点击座位标记" : "从当前任务起生效"}</span></div>
-      <div className="identity-rail" aria-label="选择身份标签">
+      <div className="section-title"><h3>{text("身份标签", "Identity tags")}</h3><span className="tag blue">{selectedTag ? text("点击座位标记", "Tap a seat to tag") : text("从当前任务起生效", "Applies from this quest")}</span></div>
+      <div className="identity-rail" aria-label={text("选择身份标签", "Choose an identity tag")}>
         {enabledRoles.map((key) => (
           <button
             key={key}
             type="button"
             className={`identity-token role-${key} ${selectedTag === key ? "selected" : ""} ${taggedSeatsByRole[key] ? "assigned" : ""}`}
             onClick={() => onSelect(selectedTag === key ? null : key)}
-            title={roles[key].name}
+            title={locale === "zh" ? roles[key].name : roles[key].enName}
             aria-pressed={selectedTag === key}
           >
             <RoleSymbol role={key} />
-            <strong>{roles[key].name}</strong>
+            <strong>{locale === "zh" ? roles[key].name : roles[key].enName}</strong>
             {taggedSeatsByRole[key] ? <em>{taggedSeatsByRole[key]}</em> : null}
           </button>
         ))}

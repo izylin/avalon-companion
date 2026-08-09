@@ -77,13 +77,13 @@ export const missionSizeTable: Record<number, number[]> = {
   10: [3, 4, 4, 5, 5]
 };
 
-export const roles: Record<RoleKey, { name: string; side: "blue" | "red"; sub: string }> = {
-  merlin: { name: "梅林", side: "blue", sub: "好人核心" },
-  percival: { name: "派西维尔", side: "blue", sub: "识别梅林" },
-  morgana: { name: "莫甘娜", side: "red", sub: "伪装梅林" },
-  assassin: { name: "刺客", side: "red", sub: "终局刺杀" },
-  mordred: { name: "莫德雷德", side: "red", sub: "梅林不可见" },
-  oberon: { name: "奥伯伦", side: "red", sub: "坏人互不见" }
+export const roles: Record<RoleKey, { name: string; enName: string; side: "blue" | "red"; sub: string; enSub: string }> = {
+  merlin: { name: "梅林", enName: "Merlin", side: "blue", sub: "好人核心", enSub: "Good's seer" },
+  percival: { name: "派西维尔", enName: "Percival", side: "blue", sub: "识别梅林", enSub: "Finds Merlin" },
+  morgana: { name: "莫甘娜", enName: "Morgana", side: "red", sub: "伪装梅林", enSub: "False Merlin" },
+  assassin: { name: "刺客", enName: "Assassin", side: "red", sub: "终局刺杀", enSub: "Final strike" },
+  mordred: { name: "莫德雷德", enName: "Mordred", side: "red", sub: "梅林不可见", enSub: "Hidden from Merlin" },
+  oberon: { name: "奥伯伦", enName: "Oberon", side: "red", sub: "坏人互不见", enSub: "Unknown to Evil" }
 };
 
 export const defaultConfig: Record<number, { red: number; blue: number; specials: RoleKey[] }> = {

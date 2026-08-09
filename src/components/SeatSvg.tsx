@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { seatCanvas, type IdentityTag, type SeatLayout, type SeatPoint, type Vote } from "@/lib/game";
+import { useI18n } from "@/lib/i18n";
 
 const longPressMs = 400;
 // 长按判定期内允许的手指抖动；超过即视为滑动页面。
@@ -125,6 +126,7 @@ export function SeatSvg({
   onSeatMove?: (seat: number, point: SeatPoint) => void;
   tourTarget?: string;
 }) {
+  const { text } = useI18n();
   const svgRef = useRef<SVGSVGElement>(null);
   const [drag, setDrag] = useState<{ seat: number; point: SeatPoint } | null>(null);
   const dragRef = useRef<{ seat: number; point: SeatPoint } | null>(null);
@@ -341,8 +343,8 @@ export function SeatSvg({
                   <circle cx={p.x} cy={p.y} r={r + 8} fill="none" stroke="var(--gold-bright)" strokeWidth="2" />
                 )
               ) : null}
-              <text fontSize={isMe ? 13 : 15} fontWeight="700" x={p.x} y={p.y + 5} textAnchor="middle" fill={textFill}>{isMe ? "我" : seat}</text>
-              {isLeader ? <text fontSize="11" fontWeight="700" x={p.x} y={p.y + r + 19} textAnchor="middle" fill="var(--red)">队长</text> : null}
+              <text fontSize={isMe ? 13 : 15} fontWeight="700" x={p.x} y={p.y + 5} textAnchor="middle" fill={textFill}>{isMe ? text("我", "Me") : seat}</text>
+              {isLeader ? <text fontSize="11" fontWeight="700" x={p.x} y={p.y + r + 19} textAnchor="middle" fill="var(--red)">{text("队长", "Leader")}</text> : null}
             </g>
           );
         })}

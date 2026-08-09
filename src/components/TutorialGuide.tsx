@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useI18n } from "@/lib/i18n";
 
 export type TutorialStep = {
   selector: string;
@@ -34,6 +35,7 @@ export function TutorialGuide({
   steps: TutorialStep[];
   onClose: () => void;
 }) {
+  const { text } = useI18n();
   const [stepIndex, setStepIndex] = useState(0);
   const [rect, setRect] = useState<SpotlightRect | null>(null);
   const [tooltipSize, setTooltipSize] = useState({ width: 344, height: 218 });
@@ -160,7 +162,7 @@ export function TutorialGuide({
   } : null;
 
   return createPortal(
-    <div className="tour-root" role="dialog" aria-modal="true" aria-label="新手操作指引">
+    <div className="tour-root" role="dialog" aria-modal="true" aria-label={text("新手操作指引", "Getting started guide")}>
       {padded ? (
         <>
           <div className="tour-shade" style={{ inset: `0 0 auto 0`, height: padded.top }} />
@@ -197,8 +199,8 @@ export function TutorialGuide({
           <span className="tour-arrow" style={{ left: layout.arrowLeft }} aria-hidden="true" />
         )}
         <div className="tour-card-head">
-          <span className="tour-kicker">操作指引 · {stepIndex + 1}/{steps.length}</span>
-          <button className="tour-close" type="button" aria-label="关闭指引" onClick={finishTour}>×</button>
+          <span className="tour-kicker">{text("操作指引", "Guide")} · {stepIndex + 1}/{steps.length}</span>
+          <button className="tour-close" type="button" aria-label={text("关闭指引", "Close guide")} onClick={finishTour}>×</button>
         </div>
         <h2>{step.title}</h2>
         <p>{step.description}</p>
@@ -206,15 +208,15 @@ export function TutorialGuide({
           {steps.map((_, index) => <i key={index} className={index === stepIndex ? "active" : ""} />)}
         </div>
         <div className="tour-actions">
-          <button className="tour-skip" type="button" onClick={finishTour}>跳过</button>
+          <button className="tour-skip" type="button" onClick={finishTour}>{text("跳过", "Skip")}</button>
           <div>
-            <button className="ghost-btn tour-nav-btn" type="button" disabled={stepIndex === 0} onClick={() => setStepIndex((index) => Math.max(0, index - 1))}>上一步</button>
+            <button className="ghost-btn tour-nav-btn" type="button" disabled={stepIndex === 0} onClick={() => setStepIndex((index) => Math.max(0, index - 1))}>{text("上一步", "Back")}</button>
             <button
               className="primary-btn tour-nav-btn"
               type="button"
               onClick={() => stepIndex === steps.length - 1 ? finishTour() : setStepIndex((index) => Math.min(steps.length - 1, index + 1))}
             >
-              {stepIndex === steps.length - 1 ? "完成" : "下一步"}
+              {stepIndex === steps.length - 1 ? text("完成", "Done") : text("下一步", "Next")}
             </button>
           </div>
         </div>
