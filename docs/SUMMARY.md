@@ -10,3 +10,12 @@
 - [4. 理解自动部署](course/04-automatic-deployments.md)
 - [5. 可选：配置反馈功能](course/05-feedback.md)
 - [6. 排查部署问题](course/06-troubleshooting.md)
+
+## 项目档案与交接
+
+- [档案说明](project-archive/README.md)
+- [项目起点与团队机制](project-archive/01-origin-and-team.md)
+- [原始需求与范围变化](project-archive/02-original-requirements.md)
+- [会议决策时间线](project-archive/03-meeting-timeline.md)
+- [MVP 测试记录](project-archive/04-mvp-test-record.md)
+- [项目复盘与维护交接](project-archive/05-retrospective-and-handover.md)

@@ -76,6 +76,10 @@ npm run lint     # ESLint 检查
 
 从 [`docs/README.md`](docs/README.md) 开始学习；GitBook 目录由 [`docs/SUMMARY.md`](docs/SUMMARY.md) 管理。
 
+## 项目档案与交接
+
+第一阶段的立项背景、原始需求、会议决策、MVP 测试和维护交接已从飞书整理到 [`docs/project-archive/`](docs/project-archive/README.md)。这些资料用于解释项目如何形成；当前产品状态仍以本 README 与 `main` 分支代码为准。
+
 ## 反馈收集配置
 
 右下角的「反馈」按钮会截取当前页面，允许用户框选、画箭头、自由圈画或遮盖敏感区域，然后将文字、标注截图与页面上下文创建为 GitHub Issue。复制 `.env.example` 为 `.env.local` 并填写：
