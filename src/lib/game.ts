@@ -14,6 +14,7 @@ export type IdentityTagEvent = {
 
 export type SeatPoint = { x: number; y: number };
 export type SeatLayout = Record<number, SeatPoint>;
+export type SeatNames = Record<number, string>;
 
 export type LaunchLog = {
   missionNo: number;
@@ -35,6 +36,8 @@ export type GameState = {
   currentMission: number;
   missionResults: MissionResult[];
   leaderIndex: number;
+  selfSeat: number;
+  seatNames?: SeatNames;
   rejectStreak: number;
   launchLog: LaunchLog[];
   phase: Phase;
@@ -67,6 +70,18 @@ export type HistoryEntry = {
   missionResults: MissionResult[];
   finishedAt: number;
 };
+
+export function isValidSeatName(name: string) {
+  const trimmed = name.trim();
+  return trimmed.length === 0 || /^[\p{Script=Han}]{1,2}$/u.test(trimmed) || /^[A-Za-z]{1,5}$/.test(trimmed);
+}
+
+export function formatSeatLabel(seat: number, selfSeat = 1, seatNames: SeatNames = {}, numericSuffix = true) {
+  const customName = seatNames[seat]?.trim();
+  if (customName && isValidSeatName(customName)) return customName;
+  if (seat === selfSeat) return "我";
+  return numericSuffix ? `${seat}号` : `${seat}`;
+}
 
 export const missionSizeTable: Record<number, number[]> = {
   5: [2, 3, 2, 3, 3],
@@ -174,6 +189,18 @@ function isSeatLayout(value: unknown, playerCount: number): value is SeatLayout 
     entries.every(([seat, point]) => isSeat(Number(seat), playerCount) && isSeatPoint(point));
 }
 
+function isSeatNames(value: unknown, playerCount: number): value is SeatNames {
+  if (!isRecord(value)) return false;
+  const entries = Object.entries(value);
+  return entries.length <= playerCount &&
+    entries.every(([seat, name]) => (
+      isSeat(Number(seat), playerCount) &&
+      typeof name === "string" &&
+      name.trim().length > 0 &&
+      isValidSeatName(name)
+    ));
+}
+
 function isHistoryEntry(value: unknown): value is HistoryEntry {
   if (!isRecord(value)) return false;
   return typeof value.id === "string" &&
@@ -198,7 +225,7 @@ export function togglesFor(playerCount: number): Record<RoleKey, boolean> {
   }, {} as Record<RoleKey, boolean>);
 }
 
-export function freshState(playerCount: number, roleToggle = togglesFor(playerCount), leaderSeat = 1): GameState {
+export function freshState(playerCount: number, roleToggle = togglesFor(playerCount), leaderSeat = 1, selfSeat = 1, seatNames: SeatNames = {}): GameState {
   return {
     playerCount,
     roleToggle,
@@ -206,6 +233,8 @@ export function freshState(playerCount: number, roleToggle = togglesFor(playerCo
     currentMission: 0,
     missionResults: [null, null, null, null, null],
     leaderIndex: leaderSeat - 1,
+    selfSeat,
+    seatNames,
     rejectStreak: 0,
     launchLog: [],
     phase: "team",
@@ -299,6 +328,8 @@ export function isSavedGameState(value: unknown): value is GameState {
     ))
   );
   const validSeatLayout = value.seatLayout === undefined || isSeatLayout(value.seatLayout, playerCount);
+  const validSelfSeat = value.selfSeat === undefined || isSeat(value.selfSeat, playerCount);
+  const validSeatNames = value.seatNames === undefined || isSeatNames(value.seatNames, playerCount);
 
   return validRoleToggle &&
     Array.isArray(value.missionSizes) &&
@@ -309,6 +340,8 @@ export function isSavedGameState(value: unknown): value is GameState {
     value.missionResults.length === 5 &&
     value.missionResults.every(isMissionResult) &&
     isIntegerBetween(value.leaderIndex, 0, playerCount - 1) &&
+    validSelfSeat &&
+    validSeatNames &&
     isIntegerBetween(value.rejectStreak, 0, 5) &&
     Array.isArray(value.launchLog) &&
     value.launchLog.length <= maxLaunchLogs &&
@@ -335,18 +368,61 @@ export function normalizeState(saved: GameState): GameState {
   }));
   return {
     ...saved,
+    selfSeat: saved.selfSeat ?? 1,
+    seatNames: saved.seatNames ?? {},
     identityTagEvents: saved.identityTagEvents ?? legacyTagEvents,
     awaitingAssassination: saved.awaitingAssassination ?? false
   };
 }
 
-export function effectiveIdentityTags(state: GameState, missionIndex: number): Record<number, IdentityTag> {
-  return (state.identityTagEvents ?? []).reduce<Record<number, IdentityTag>>((tags, event) => {
+export const maxIdentityTagsPerSeat = 3;
+
+export function effectiveIdentityTags(state: GameState, missionIndex: number): Record<number, IdentityTag[]> {
+  return (state.identityTagEvents ?? []).reduce<Record<number, IdentityTag[]>>((tags, event) => {
     if (event.startMission <= missionIndex && (event.endMission === undefined || missionIndex < event.endMission)) {
-      tags[event.seat] = event.tag;
+      const seatTags = tags[event.seat] ?? (tags[event.seat] = []);
+      if (!seatTags.includes(event.tag)) seatTags.push(event.tag);
     }
     return tags;
   }, {});
+}
+
+function activeIdentityEventIndex(events: IdentityTagEvent[], seat: number, tag: IdentityTag, missionIndex: number) {
+  return events.findLastIndex((event) => (
+    event.seat === seat &&
+    event.tag === tag &&
+    event.startMission <= missionIndex &&
+    (event.endMission === undefined || missionIndex < event.endMission)
+  ));
+}
+
+export function assignIdentityTag(current: GameState, seat: number, tag: IdentityTag): { state: GameState; ok: boolean } {
+  const missionIndex = current.currentMission;
+  const events = current.identityTagEvents ?? [];
+  if (activeIdentityEventIndex(events, seat, tag, missionIndex) >= 0) return { state: current, ok: true };
+
+  const activeCount = events.filter((event) => (
+    event.seat === seat &&
+    event.startMission <= missionIndex &&
+    (event.endMission === undefined || missionIndex < event.endMission)
+  )).length;
+  if (activeCount >= maxIdentityTagsPerSeat) return { state: current, ok: false };
+
+  return {
+    state: { ...current, identityTagEvents: [...events, { seat, tag, startMission: missionIndex }] },
+    ok: true
+  };
+}
+
+export function unassignIdentityTag(current: GameState, seat: number, tag: IdentityTag): GameState {
+  const missionIndex = current.currentMission;
+  const events = current.identityTagEvents ?? [];
+  const index = activeIdentityEventIndex(events, seat, tag, missionIndex);
+  if (index < 0) return current;
+
+  const identityTagEvents = [...events];
+  identityTagEvents[index] = { ...identityTagEvents[index], endMission: missionIndex };
+  return { ...current, identityTagEvents };
 }
 
 export function missionCardClass(result: MissionResult) {
@@ -372,6 +448,29 @@ export function logLaunch(current: GameState, info: { passed: boolean; missionRe
   };
 }
 
+
+export function editLaunchRecord(
+  current: GameState,
+  missionIndex: number,
+  round: number,
+  team: number[],
+  votes: Record<number, Vote>
+) {
+  const missionNo = missionIndex + 1;
+  const agree = Object.values(votes).filter((vote) => vote === "agree").length;
+  const reject = Object.values(votes).filter((vote) => vote === "reject").length;
+  const passed = agree > reject;
+
+  return {
+    ...current,
+    launchLog: current.launchLog.map((log) =>
+      log.missionNo === missionNo && log.round === round && !log.resultOnly
+        ? { ...log, team: [...team].sort((a, b) => a - b), votes: { ...votes }, passed }
+        : log
+    )
+  };
+}
+
 export function completeMissionLaunch(current: GameState, result: "good" | "bad") {
   const missionNo = current.currentMission + 1;
   const launchIndex = current.launchLog.findLastIndex((log) => log.missionNo === missionNo && log.passed);
@@ -390,8 +489,11 @@ export function completeMissionLaunch(current: GameState, result: "good" | "bad"
 }
 
 /**
- * 产品需求 #34：现场来不及逐项记录时，整轮只保留“任务成功 / 失败”。
- * 当前任务已有的临时组队或投票记录会被替换，避免回顾页展示不完整详情。
+ * 产品需求 #34 / #47：现场来不及逐项记录时，只补一条“任务成功 / 失败”。
+ *
+ * 已经结算过的组队与投票属于有效历史，不能因为随后使用快速记录而被删除。
+ * 若当前已经选出上车队伍、但还没录入投票，也要把这支队伍保留下来。
+ * 因此这里只替换同一任务旧的 resultOnly 记录，并保留所有详细发车记录。
  */
 export function recordMissionResultOnly(current: GameState, result: "good" | "bad") {
   const missionNo = current.currentMission + 1;
@@ -399,7 +501,7 @@ export function recordMissionResultOnly(current: GameState, result: "good" | "ba
     missionNo,
     round: Math.min(5, current.rejectStreak + 1),
     leaderSeat: current.leaderIndex + 1,
-    team: [],
+    team: [...current.pickedTeam],
     votes: {},
     passed: true,
     missionResult: result,
@@ -410,7 +512,7 @@ export function recordMissionResultOnly(current: GameState, result: "good" | "ba
   return {
     ...current,
     launchLog: [
-      ...current.launchLog.filter((log) => log.missionNo !== missionNo),
+      ...current.launchLog.filter((log) => !(log.missionNo === missionNo && log.resultOnly)),
       minimalLog
     ]
   };

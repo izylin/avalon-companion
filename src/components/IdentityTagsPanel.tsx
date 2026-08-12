@@ -51,7 +51,7 @@ export function IdentityTagsPanel({
   onSelect
 }: {
   state: GameState;
-  activeTags: Record<number, IdentityTag>;
+  activeTags: Record<number, IdentityTag[]>;
   selectedTag: IdentityTag | null;
   onSelect: (tag: IdentityTag | null) => void;
 }) {
@@ -59,7 +59,7 @@ export function IdentityTagsPanel({
   const enabledRoles = roleKeys.filter((key) => state.roleToggle[key]);
   const taggedSeatsByRole = enabledRoles.reduce<Record<string, string>>((acc, key) => {
     const seats = Object.entries(activeTags)
-      .filter(([, tag]) => tag === key)
+      .filter(([, tags]) => tags.includes(key))
       .map(([seat]) => seat === "1" ? text("我", "Me") : seat);
     if (seats.length) acc[key] = seats.join(",");
     return acc;

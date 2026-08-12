@@ -12,6 +12,7 @@ import { TutorialGuide, type TutorialStep } from "@/components/TutorialGuide";
 import { useI18n } from "@/lib/i18n";
 import {
   allAgreeVotes,
+  assignIdentityTag,
   appendHistory,
   completeMissionLaunch,
   defaultConfig,
@@ -35,6 +36,7 @@ import {
   storageKey,
   themeStorageKey,
   togglesFor,
+  unassignIdentityTag,
   type GameState,
   type HistoryEntry,
   type IdentityTag,
@@ -238,28 +240,10 @@ export default function Home() {
 
   function toggleIdentityTag(seat: number, tag: IdentityTag) {
     updateState((cur) => {
-      const missionIndex = cur.currentMission;
-      const identityTagEvents = [...(cur.identityTagEvents ?? [])];
-      const activeAtMission = (event: { startMission: number; endMission?: number }) => (
-        event.startMission <= missionIndex &&
-        (event.endMission === undefined || missionIndex < event.endMission)
-      );
-      const activeIndex = identityTagEvents.findLastIndex((event) => (
-        event.seat === seat && event.tag === tag && activeAtMission(event)
-      ));
-
-      if (activeIndex >= 0) {
-        identityTagEvents[activeIndex] = { ...identityTagEvents[activeIndex], endMission: missionIndex };
-      } else {
-        identityTagEvents.forEach((event, index) => {
-          if (event.seat === seat && activeAtMission(event)) {
-            identityTagEvents[index] = { ...event, endMission: missionIndex };
-          }
-        });
-        identityTagEvents.push({ seat, tag, startMission: missionIndex });
-      }
-
-      return { ...cur, identityTagEvents };
+      const activeTags = effectiveIdentityTags(cur, cur.currentMission)[seat] ?? [];
+      if (activeTags.includes(tag)) return unassignIdentityTag(cur, seat, tag);
+      const assigned = assignIdentityTag(cur, seat, tag);
+      return assigned.ok ? assigned.state : cur;
     });
   }
 

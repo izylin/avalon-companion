@@ -117,7 +117,7 @@ export function SeatSvg({
   leaderSeat: number;
   teamSeats: number[];
   voteMap?: Record<number, Vote>;
-  identityTags?: Record<number, IdentityTag>;
+  identityTags?: Record<number, IdentityTag[]>;
   onSeatClick?: (seat: number) => void;
   captionTop: string;
   captionBottom: string;
@@ -287,7 +287,7 @@ export function SeatSvg({
           const isMe = seat === 1;
           const onTeam = teamSeats.includes(seat);
           const isLeader = seat === leaderSeat;
-          const tag = identityTags[seat];
+          const tag = identityTags[seat]?.[0];
           const vote = voteMap[seat];
           // 编辑座位图时不接受点击，否则拖动会顺带改掉上车名单或投票。
           const clickable = Boolean(onSeatClick) && !editing;
