@@ -10,4 +10,6 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 .claude
+.agents
+skills-lock.json
 *.tsbuildinfo

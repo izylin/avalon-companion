@@ -187,7 +187,11 @@
         term._tooltipEl = tip;
       }
       term._tooltipEl.textContent = term.dataset.definition;
-      term._tooltipEl.classList.contains('visible') ? hideTooltip(term._tooltipEl) : showTooltip(term, term._tooltipEl);
+      if (term._tooltipEl.classList.contains('visible')) {
+        hideTooltip(term._tooltipEl);
+      } else {
+        showTooltip(term, term._tooltipEl);
+      }
     }
   });
 
@@ -466,7 +470,7 @@
       packet.style.setProperty('--packet-to-y',   ty + 'px');
       packet.style.display    = 'block';
       packet.style.animation  = 'none';
-      packet.offsetHeight; // reflow
+      void packet.offsetHeight; // Force reflow before restarting the animation.
       packet.style.animation  = 'packetMove 0.8s var(--ease-in-out) forwards';
       setTimeout(() => { packet.style.display = 'none'; }, 850);
     }
