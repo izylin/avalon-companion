@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Avalon Notepad — 项目回顾、最终验收与所有权转交</title>
+<style>
+  :root{
+    --ink:#0b1020;
+    --ink-2:#131a33;
+    --paper:#f5f2ea;
+    --gold:#d8b26a;
+    --gold-dim:#9a7f47;
+    --blue:#6f9be8;
+    --green:#63c39a;
+    --red:#e0776f;
+    --muted:rgba(245,242,234,.62);
+    --line:rgba(216,178,106,.28);
+    --font:"Inter","Helvetica Neue",-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:#05070f;
+    color:var(--paper);
+    font-family:var(--font);
+    overflow:hidden;
+    display:flex;align-items:center;justify-content:center;
+  }
+
+  /* ---------- stage ---------- */
+  #stage{
+    position:relative;
+    width:100vw;height:100vh;
+    display:flex;align-items:center;justify-content:center;
+  }
+  #deck{
+    width:1280px;height:720px;
+    transform-origin:center center;
+    position:relative;
+    border-radius:14px;
+    overflow:hidden;
+    box-shadow:0 40px 120px rgba(0,0,0,.65);
+  }
+  .slide{
+    position:absolute;inset:0;
+    padding:52px 64px 60px;
+    background:
+      radial-gradient(1100px 600px at 15% -10%, rgba(111,155,232,.13), transparent 60%),
+      radial-gradient(900px 500px at 95% 110%, rgba(216,178,106,.12), transparent 60%),
+      linear-gradient(160deg, var(--ink) 0%, var(--ink-2) 100%);
+    display:none;
+    flex-direction:column;
+  }
+  .slide.active{display:flex;animation:in .32s ease}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  /* ---------- typography ---------- */
+  .eyebrow{
+    font-size:13px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--gold);font-weight:600;margin-bottom:14px;
+    display:flex;align-items:center;gap:12px;
+  }
+  .eyebrow::after{content:"";flex:1;height:1px;background:var(--line)}
+  h1{font-size:60px;line-height:1.08;letter-spacing:-.02em;font-weight:700}
+  h2{font-size:38px;line-height:1.15;letter-spacing:-.015em;font-weight:650;margin-bottom:6px}
+  .sub{font-size:19px;color:var(--muted);margin-top:16px;line-height:1.5}
+  .lead{font-size:17px;color:var(--muted);margin-bottom:26px;line-height:1.5}
+  p,li{font-size:17px;line-height:1.55}
+
+  /* ---------- layout helpers ---------- */
+  .body{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:34px;align-items:start}
+  .cols-3{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+  .card{
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:22px 24px;
+    background:rgba(255,255,255,.035);
+  }
+  .card h3{font-size:15px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:14px;font-weight:600}
+  .card.accent-blue h3{color:var(--blue)}
+  .card.accent-green h3{color:var(--green)}
+  .card.accent-red h3{color:var(--red)}
+  ul{list-style:none;display:flex;flex-direction:column;gap:11px}
+  ul li{padding-left:20px;position:relative;color:rgba(245,242,234,.9)}
+  ul li::before{content:"";position:absolute;left:0;top:10px;width:7px;height:7px;border-radius:2px;background:var(--gold);opacity:.75}
+  .card.accent-blue li::before{background:var(--blue)}
+  .card.accent-green li::before{background:var(--green)}
+  .card.accent-red li::before{background:var(--red)}
+  .note{font-size:15px;color:var(--muted);margin-top:22px;padding-left:14px;border-left:2px solid var(--gold-dim);line-height:1.5}
+
+  /* ---------- flow / pipeline ---------- */
+  .flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .step{
+    border:1px solid var(--line);border-radius:999px;
+    padding:9px 16px;font-size:15px;white-space:nowrap;
+    background:rgba(216,178,106,.08);
+  }
+  .arrow{color:var(--gold-dim);font-size:15px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+  .chip{font-size:14px;padding:6px 12px;border-radius:6px;background:rgba(111,155,232,.13);border:1px solid rgba(111,155,232,.28);color:#cddcf6}
+
+  /* ---------- numbered layers ---------- */
+  .layer{display:flex;gap:18px;align-items:flex-start;padding:18px 0;border-top:1px solid var(--line)}
+  .layer:first-child{border-top:none}
+  .layer .num{
+    flex:0 0 42px;height:42px;border-radius:10px;
+    display:grid;place-items:center;font-weight:700;font-size:18px;
+    background:rgba(216,178,106,.14);border:1px solid var(--line);color:var(--gold);
+  }
+  .layer .t{font-size:21px;font-weight:600;margin-bottom:4px}
+  .layer .d{font-size:16px;color:var(--muted)}
+
+  /* ---------- timeline ---------- */
+  .timeline{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:8px}
+  .phase{padding:0 18px 0 0;position:relative}
+  .phase .bar{height:4px;border-radius:2px;margin-bottom:18px;background:var(--gold);opacity:.35}
+  .phase:nth-child(1) .bar{opacity:.35}
+  .phase:nth-child(2) .bar{opacity:.55}
+  .phase:nth-child(3) .bar{opacity:.75}
+  .phase:nth-child(4) .bar{opacity:1}
+  .phase .pn{font-size:13px;letter-spacing:.18em;color:var(--gold-dim);margin-bottom:6px}
+  .phase .pt{font-size:22px;font-weight:650;margin-bottom:10px}
+  .phase .pd{font-size:15px;color:var(--muted);line-height:1.5}
+
+  /* ---------- checklist ---------- */
+  .checks{display:flex;gap:10px;flex-wrap:wrap;margin-top:auto;padding-top:22px}
+  .check{
+    font-size:14px;padding:8px 14px;border-radius:8px;
+    background:rgba(99,195,154,.12);border:1px solid rgba(99,195,154,.32);color:#a9e6cb;
+  }
+  .check::before{content:"✓ ";font-weight:700}
+
+  .quote{
+    border-left:3px solid var(--gold);padding:4px 0 4px 18px;
+    font-size:16px;line-height:1.6;color:rgba(245,242,234,.92);
+  }
+  .quote .who{display:block;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;font-weight:600}
+
+  .ask{
+    margin-top:30px;padding:16px 22px;border-radius:10px;
+    background:rgba(216,178,106,.1);border:1px solid var(--line);
+    font-size:19px;font-weight:600;text-align:center;
+  }
+
+  /* ---------- footer ---------- */
+  .foot{
+    position:absolute;left:64px;right:64px;bottom:22px;
+    display:flex;justify-content:space-between;align-items:center;
+    font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:rgba(245,242,234,.34);
+  }
+  .progress{position:absolute;left:0;bottom:0;height:3px;background:var(--gold);transition:width .3s ease}
+
+  /* ---------- notes panel ---------- */
+  #notes{
+    position:fixed;right:0;top:0;bottom:0;width:400px;
+    background:#0a0d18;border-left:1px solid var(--line);
+    padding:26px 28px;overflow-y:auto;display:none;z-index:20;
+  }
+  #notes.on{display:block}
+  #notes h4{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:14px}
+  #notes .nt{font-size:15px;line-height:1.75;color:rgba(245,242,234,.85);white-space:pre-wrap}
+  #notes .meta{margin-top:20px;padding-top:16px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+  #timer{font-variant-numeric:tabular-nums;font-size:26px;color:var(--paper);margin-bottom:6px}
+
+  #hint{
+    position:fixed;left:16px;bottom:14px;font-size:11px;letter-spacing:.1em;
+    color:rgba(245,242,234,.3);z-index:20;
+  }
+</style>
+</head>
+<body>
+<div id="stage"><div id="deck">
+
+<!-- 1 -->
+<section class="slide">
+  <div class="eyebrow">Final Review · Acceptance · Handover</div>
+  <div class="body">
+    <h1>Avalon Notepad</h1>
+    <h1 style="font-size:30px;font-weight:500;color:var(--gold);margin-top:14px">项目回顾、最终验收与所有权转交</h1>
+    <div class="sub">From idea to delivery — and from ownership to continuity</div>
+    <div class="flow" style="margin-top:36px">
+      <span class="step">回顾项目</span><span class="arrow">→</span>
+      <span class="step">确认验收</span><span class="arrow">→</span>
+      <span class="step">总结学习</span><span class="arrow">→</span>
+      <span class="step">转交所有权</span><span class="arrow">→</span>
+      <span class="step">正式结项</span>
+    </div>
+  </div>
+  <div class="foot"><span>Avalon Notepad</span><span>01 / 11</span></div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <div class="eyebrow">Why · What</div>
+  <div class="body">
+    <h2>为什么做，做成了什么</h2>
+    <div class="lead">一个把线下阿瓦隆的"记忆负担"变成"可回顾记录"的工具。</div>
+    <div class="cols">
+      <div class="card accent-red">
+        <h3>问题</h3>
+        <ul>
+          <li>线下阿瓦隆信息完全依赖记忆</li>
+          <li>组队、投票和任务难以回顾</li>
+          <li>身份推测和笔记分散在各处</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>核心流程</h3>
+        <div class="flow">
+          <span class="step">创建对局</span><span class="arrow">→</span>
+          <span class="step">组队</span><span class="arrow">→</span>
+          <span class="step">投票</span><span class="arrow">→</span>
+          <span class="step">任务</span><span class="arrow">→</span>
+          <span class="step">刺杀／结算</span><span class="arrow">→</span>
+          <span class="step">复盘</span>
+        </div>
+        <div class="chips">
+          <span class="chip">身份标签</span><span class="chip">笔记</span>
+          <span class="chip">本地存档</span><span class="chip">新手导览</span>
+          <span class="chip">中英双语</span><span class="chip">反馈收集</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Why · What</span><span>02 / 11</span></div>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <div class="eyebrow">Project Positioning</div>
+  <div class="body">
+    <h2>这是一个什么项目</h2>
+    <div class="lead">三个层面，说明它同时是产品项目、工程项目和协作项目。</div>
+    <div class="layer">
+      <div class="num">1</div>
+      <div><div class="t">Building the right product</div>
+      <div class="d">产品管理 + User-Centred Design</div></div>
+    </div>
+    <div class="layer">
+      <div class="num">2</div>
+      <div><div class="t">Building the product right</div>
+      <div class="d">全栈软件工程 + 测试 + 安全 + 部署</div></div>
+    </div>
+    <div class="layer">
+      <div class="num">3</div>
+      <div><div class="t">Delivering and sustaining the product</div>
+      <div class="d">Scrum 协作 + 验收 + 文档 + 所有权转交</div></div>
+    </div>
+    <div class="note">项目定位：采用 local-first 架构、带轻量服务端 API 和 GitHub 集成的小型全栈 Web 产品。</div>
+  </div>
+  <div class="foot"><span>Positioning</span><span>03 / 11</span></div>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <div class="eyebrow">UCD × Software Lifecycle</div>
+  <div class="body">
+    <h2>UCD 与软件开发闭环</h2>
+    <div class="cols" style="grid-template-columns:1.35fr 1fr;align-items:center">
+      <div>
+        <svg viewBox="0 0 520 330" width="100%" role="img" aria-label="以用户为中心的迭代循环图">
+          <defs>
+            <marker id="ah" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L6,3 L0,6 z" fill="#9a7f47"/>
+            </marker>
+          </defs>
+          <circle cx="260" cy="165" r="62" fill="rgba(216,178,106,.12)" stroke="#d8b26a" stroke-width="1.2"/>
+          <text x="260" y="160" text-anchor="middle" fill="#d8b26a" font-size="19" font-weight="700" font-family="Inter,sans-serif">USERS</text>
+          <text x="260" y="182" text-anchor="middle" fill="rgba(245,242,234,.6)" font-size="12" font-family="Inter,sans-serif">玩家与场景</text>
+
+          <!-- orbit -->
+          <circle cx="260" cy="165" r="128" fill="none" stroke="rgba(216,178,106,.3)" stroke-width="1" stroke-dasharray="4 7"/>
+
+          <g font-family="Inter,sans-serif" font-size="12.5" fill="#f5f2ea" text-anchor="middle">
+            <g><rect x="196" y="10" width="128" height="30" rx="15" fill="#131a33" stroke="rgba(216,178,106,.42)"/><text x="260" y="30">理解用户与场景</text></g>
+            <g><rect x="368" y="72" width="126" height="30" rx="15" fill="#131a33" stroke="rgba(216,178,106,.42)"/><text x="431" y="92">定义需求与 MVP</text></g>
+            <g><rect x="380" y="212" width="128" height="30" rx="15" fill="#131a33" stroke="rgba(216,178,106,.42)"/><text x="444" y="232">交互设计与原型</text></g>
+            <g><rect x="206" y="292" width="108" height="30" rx="15" fill="#131a33" stroke="rgba(216,178,106,.42)"/><text x="260" y="312">全栈开发</text></g>
+            <g><rect x="8" y="212" width="140" height="30" rx="15" fill="#131a33" stroke="rgba(216,178,106,.42)"/><text x="78" y="232">功能验证与用户测试</text></g>
+            <g><rect x="20" y="72" width="128" height="30" rx="15" fill="#131a33" stroke="rgba(216,178,106,.42)"/><text x="84" y="92">维护与下一轮迭代</text></g>
+          </g>
+
+          <g fill="none" stroke="#9a7f47" stroke-width="1.4" marker-end="url(#ah)">
+            <path d="M330,30 A150,150 0 0,1 400,74"/>
+            <path d="M452,106 A150,150 0 0,1 456,208"/>
+            <path d="M420,246 A150,150 0 0,1 330,300"/>
+            <path d="M198,308 A150,150 0 0,1 108,246"/>
+            <path d="M64,208 A150,150 0 0,1 68,106"/>
+            <path d="M120,74 A150,150 0 0,1 190,30"/>
+          </g>
+        </svg>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="card"><h3>UCD</h3><p style="color:var(--muted)">确保做<b style="color:var(--paper)">正确的产品</b></p></div>
+        <div class="card accent-blue"><h3>软件工程</h3><p style="color:var(--muted)">确保<b style="color:var(--paper)">正确地实现</b>产品</p></div>
+        <div class="card accent-green"><h3>Scrum</h3><p style="color:var(--muted)">确保团队<b style="color:var(--paper)">持续交付</b></p></div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>UCD Loop</span><span>04 / 11</span></div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <div class="eyebrow">How We Iterated</div>
+  <div class="body">
+    <h2>我们如何迭代完成</h2>
+    <div class="lead">四个阶段，每一轮都在上一轮可用的基础上加深。</div>
+    <div class="timeline">
+      <div class="phase"><div class="bar"></div><div class="pn">PHASE 01</div><div class="pt">Foundation</div>
+        <div class="pd">第一版、规则模型、核心对局流程</div></div>
+      <div class="phase"><div class="bar"></div><div class="pn">PHASE 02</div><div class="pt">Experience</div>
+        <div class="pd">响应式界面、座位交互、身份标签、导览与可视化</div></div>
+      <div class="phase"><div class="bar"></div><div class="pn">PHASE 03</div><div class="pt">Reliability</div>
+        <div class="pd">存档校验、安全处理、错误修复、反馈 API</div></div>
+      <div class="phase"><div class="bar"></div><div class="pn">PHASE 04</div><div class="pt">Delivery</div>
+        <div class="pd">中英双语、文档、构建和部署收尾</div></div>
+    </div>
+    <div class="note">每个阶段结束时产品都处于可运行状态，迭代是叠加而不是重写。</div>
+  </div>
+  <div class="foot"><span>Iteration</span><span>05 / 11</span></div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <div class="eyebrow">Architecture</div>
+  <div class="body">
+    <h2>全栈架构</h2>
+    <div class="cols" style="grid-template-columns:1.25fr 1fr;align-items:center">
+      <div>
+        <svg viewBox="0 0 470 340" width="100%" role="img" aria-label="Avalon Notepad 架构图">
+          <defs>
+            <marker id="ah2" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L6,3 L0,6 z" fill="#d8b26a"/>
+            </marker>
+          </defs>
+          <g font-family="Inter,sans-serif">
+            <rect x="15" y="8" width="440" height="104" rx="10" fill="rgba(111,155,232,.09)" stroke="rgba(111,155,232,.4)"/>
+            <text x="32" y="34" fill="#6f9be8" font-size="14" font-weight="700">BROWSER CLIENT</text>
+            <text x="32" y="60" fill="#f5f2ea" font-size="13">游戏 UI 与规则交互</text>
+            <text x="32" y="82" fill="#f5f2ea" font-size="13">localStorage（对局数据留在本地）</text>
+            <text x="32" y="102" fill="rgba(245,242,234,.62)" font-size="13">POST /api/feedback</text>
+
+            <line x1="235" y1="112" x2="235" y2="132" stroke="#d8b26a" stroke-width="1.5" marker-end="url(#ah2)"/>
+
+            <rect x="15" y="136" width="440" height="104" rx="10" fill="rgba(216,178,106,.09)" stroke="rgba(216,178,106,.4)"/>
+            <text x="32" y="162" fill="#d8b26a" font-size="14" font-weight="700">NEXT.JS SERVER API</text>
+            <text x="32" y="188" fill="#f5f2ea" font-size="13">校验与基础限流</text>
+            <text x="32" y="210" fill="#f5f2ea" font-size="13">GitHub Token 保护（仅服务端持有）</text>
+            <text x="32" y="230" fill="rgba(245,242,234,.62)" font-size="13">GitHub API</text>
+
+            <line x1="235" y1="240" x2="235" y2="260" stroke="#d8b26a" stroke-width="1.5" marker-end="url(#ah2)"/>
+
+            <rect x="15" y="264" width="440" height="62" rx="10" fill="rgba(99,195,154,.09)" stroke="rgba(99,195,154,.4)"/>
+            <text x="32" y="290" fill="#63c39a" font-size="14" font-weight="700">GITHUB REPOSITORY + ISSUES</text>
+            <text x="32" y="312" fill="#f5f2ea" font-size="13">反馈落地为 Issue，可追踪、可分派</text>
+          </g>
+        </svg>
+      </div>
+      <div>
+        <div class="card"><h3>四个要点</h3>
+          <ul>
+            <li>核心对局数据留在用户浏览器</li>
+            <li>只有用户主动提交反馈时才经过后端</li>
+            <li>没有传统应用数据库</li>
+            <li>不是纯前端静态网站</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Architecture</span><span>06 / 11</span></div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <div class="eyebrow">Acceptance · Scope</div>
+  <div class="body">
+    <h2>验收状态与范围边界</h2>
+    <div class="cols">
+      <div class="card accent-green">
+        <h3>已验收</h3>
+        <ul>
+          <li>MVP 核心流程完成</li>
+          <li>ESLint 零告警</li>
+          <li>TypeScript 与生产构建通过</li>
+          <li>构建及部署路径问题已修复</li>
+          <li>文档和交接资料已准备</li>
+        </ul>
+      </div>
+      <div class="card accent-blue">
+        <h3>已接受的 MVP 边界</h3>
+        <ul>
+          <li>暂不支持自定义玩家昵称</li>
+          <li>暂不区分远征投票与组队投票</li>
+          <li>暂不开放首页继续对局入口</li>
+        </ul>
+      </div>
+    </div>
+    <div class="note">范围边界不是被遗忘的缺陷，而是明确记录、共同接受的取舍，不阻塞当前版本结项。</div>
+  </div>
+  <div class="foot"><span>Acceptance</span><span>07 / 11</span></div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <div class="eyebrow">Usability Testing</div>
+  <div class="body">
+    <h2>Usability Testing 与下一步</h2>
+    <div class="flow" style="margin:6px 0 24px">
+      <span class="step">Plan</span><span class="arrow">→</span>
+      <span class="step">Run</span><span class="arrow">→</span>
+      <span class="step">Analyse, document and present</span>
+    </div>
+    <div class="cols">
+      <div class="card">
+        <h3>示例 Task Scenario</h3>
+        <p style="color:rgba(245,242,234,.92)">"你和四位朋友准备开始游戏，请创建对局并记录第一轮任务。"</p>
+        <div class="chips">
+          <span class="chip">是否完成</span><span class="chip">完成时间</span>
+          <span class="chip">错误与求助次数</span><span class="chip">用户原话</span>
+        </div>
+      </div>
+      <div class="card accent-red">
+        <h3>当前状态</h3>
+        <ul><li>正式 usability test：转交后的验证 backlog</li></ul>
+        <p style="color:var(--muted);margin-top:12px;font-size:15px">尚未执行，因此不呈现任何测试数据。</p>
+      </div>
+    </div>
+    <div class="note">工程验收回答"软件是否正确运行"；usability test 回答"用户能否独立完成目标"。两者不能互相替代。</div>
+  </div>
+  <div class="foot"><span>Usability</span><span>08 / 11</span></div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <div class="eyebrow">Team · Shared Learning</div>
+  <div class="body">
+    <h2>团队贡献与共同学习</h2>
+    <div class="cols-3" style="margin:14px 0 18px;grid-template-columns:repeat(4,1fr);gap:14px">
+      <div class="card" style="padding:16px 18px">
+        <h3 style="margin-bottom:10px">演讲者</h3>
+        <p style="font-size:15px;color:var(--muted);line-height:1.5">Product Owner<br>项目发起人<br>第一版建立者</p>
+      </div>
+      <div class="card accent-blue" style="padding:16px 18px">
+        <h3 style="margin-bottom:10px">Yumi</h3>
+        <p style="font-size:15px;color:var(--muted);line-height:1.5">Scrum Master<br>开发贡献者</p>
+      </div>
+      <div class="card accent-green" style="padding:16px 18px">
+        <h3 style="margin-bottom:10px">zhji0051</h3>
+        <p style="font-size:15px;color:var(--muted);line-height:1.5">导览、动效<br>投票可视化<br>任务回顾</p>
+      </div>
+      <div class="card accent-green" style="padding:16px 18px">
+        <h3 style="margin-bottom:10px">hao-hao-3070</h3>
+        <p style="font-size:15px;color:var(--muted);line-height:1.5">身份标签<br>座位信息</p>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span class="chip">产品定义与 MVP 取舍</span>
+      <span class="chip">UCD 与交互设计</span>
+      <span class="chip">Next.js 全栈开发</span>
+      <span class="chip">Git、PR 与迭代协作</span>
+      <span class="chip">测试、部署、文档与维护</span>
+    </div>
+    <div class="ask">用一句话说：你在这个项目中最大的收获是什么？<span style="display:block;font-size:13px;font-weight:400;color:var(--muted);margin-top:6px">每人 20–30 秒</span></div>
+  </div>
+  <div class="foot"><span>Team</span><span>09 / 11</span></div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <div class="eyebrow">Why Yumi</div>
+  <div class="body">
+    <h2>为什么转交给 Yumi</h2>
+    <div class="cols">
+      <div class="card accent-blue">
+        <h3>理由</h3>
+        <ul>
+          <li>她担任 Scrum Master</li>
+          <li>了解项目和团队推进过程</li>
+          <li>在组织、跟进和承担责任方面稳定</li>
+          <li>适合成为下一阶段的持续维护者</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>必须说清楚的三件事</h3>
+        <ul>
+          <li>项目是四人共同成果</li>
+          <li>转交的是后续决策权和维护责任</li>
+          <li>不代表贡献归属发生改变</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Handover Rationale</span><span>10 / 11</span></div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+  <div class="eyebrow">Acceptance · Handover · Closure</div>
+  <div class="body">
+    <h2 style="font-size:33px">正式验收、转交与结项</h2>
+    <div class="cols" style="gap:24px;margin-top:14px">
+      <div class="card" style="padding:18px 20px">
+        <div class="quote"><span class="who">Product Owner 声明</span>
+        "我确认当前版本已完成约定的 MVP 核心流程，已知范围和遗留事项已经记录，工程检查与生产构建通过。因此，我确认当前项目阶段验收通过，并将后续项目所有权转交给 Yumi。"</div>
+      </div>
+      <div class="card accent-blue" style="padding:18px 20px">
+        <div class="quote" style="border-left-color:var(--blue)"><span class="who" style="color:var(--blue)">Yumi 接受声明</span>
+        "我接受 Avalon Notepad 的项目所有权，并确认已了解当前产品状态、代码与部署方式、范围边界、遗留事项及后续维护责任。"</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:26px;margin-top:20px;font-size:15px;color:var(--muted)">
+      <span>· 当前 MVP 项目阶段正式结束</span>
+      <span>· 后续维护与下一轮迭代由 Yumi 决定</span>
+      <span>· 原 PO 以后如参与，将以协作者或顾问身份参与</span>
+    </div>
+    <div class="checks">
+      <span class="check">MVP accepted</span>
+      <span class="check">Scope documented</span>
+      <span class="check">Knowledge transferred</span>
+      <span class="check">Ownership accepted</span>
+      <span class="check">Project stage closed</span>
+    </div>
+  </div>
+  <div class="foot"><span>Closure</span><span>11 / 11</span></div>
+</section>
+
+<div class="progress" id="bar"></div>
+</div></div>
+
+<div id="notes">
+  <div id="timer">00:00</div>
+  <h4>Speaker Notes</h4>
+  <div class="nt" id="nt"></div>
+  <div class="meta" id="meta"></div>
+</div>
+<div id="hint">← → 翻页 · S 讲者备注 · T 计时 · F 全屏</div>
+
+<script>
+const NOTES = [
+  {t:"1 分钟", n:"今天这场会议要完成五件事：回顾项目、确认验收、总结学习、转交所有权、正式结项。请特别注意一点：今天结束的是由当前 Product Owner 负责的 MVP 项目阶段，而不是宣告 Avalon Notepad 这个产品永远停止。产品会继续存在，代码和部署都在，只是后续的决策权和维护责任会交给新的负责人。整场会议控制在 20 分钟以内，我先用十三到十五分钟做汇报，之后是转交和大家的简短回应，中间不单独安排问答环节。"},
+  {t:"1.5 分钟", n:"先说为什么做。线下玩阿瓦隆时，所有信息都靠记忆：谁组过队、谁投过反对、哪一轮任务失败，复盘时常常说不清楚，身份推测和笔记也散在各人手机上。所以我们把一局游戏的完整链路做成了可记录、可回顾的流程：创建对局、组队、投票、任务、刺杀结算，最后复盘。围绕这条主线，我们补上了身份标签、笔记、本地存档、新手导览、中英双语和反馈收集。产品定位很克制：它不替代裁判，也不联网对战，它只做一件事，把一局游戏的过程留下来。"},
+  {t:"1.5 分钟", n:"这个项目可以从三个层面理解。第一层是 building the right product，也就是产品管理和以用户为中心的设计，回答我们该做什么。第二层是 building the product right，全栈软件工程、测试、安全和部署，回答我们有没有把它做对。第三层是 delivering and sustaining the product，Scrum 协作、验收、文档和所有权转交，回答它能不能持续下去。技术定位上，它是一个采用 local-first 架构、带轻量服务端 API 和 GitHub 集成的小型全栈 Web 产品，不是课堂作业式的静态页面。"},
+  {t:"1.5 分钟", n:"这张图说明我们的工作方式。整个循环以用户为中心：理解用户与场景，定义需求和 MVP，做交互设计与原型，进入全栈开发，然后是功能验证与用户测试，再回到维护和下一轮迭代。三条线各司其职：UCD 确保我们做正确的产品，软件工程确保我们正确地实现产品，Scrum 确保团队能持续交付。这是参考 COMP3511 的生命周期思想重新画的图，重点不是流程本身有多标准，而是我们真的按这个顺序走了几轮，每一轮都回到用户身上。"},
+  {t:"1.5 分钟", n:"我们的迭代可以整合成四个阶段。Foundation 阶段完成第一版、规则模型和核心对局流程，让产品先跑起来。Experience 阶段做响应式界面、座位交互、身份标签、新手导览和投票可视化，让它好用。Reliability 阶段处理存档校验、安全问题、错误修复和反馈 API，让它可靠。Delivery 阶段完成中英双语、文档、构建和部署收尾，让它可以交出去。需要说明的是，Git 提交记录不等于创作归属，第一版是我作为项目发起人和 Product Owner 亲自建立的。"},
+  {t:"1.5 分钟", n:"架构上有三层。浏览器端承担游戏 UI 和规则交互，对局数据写在 localStorage 里；当用户主动提交反馈时，才会 POST 到 /api/feedback。服务端是 Next.js 的 API 路由，负责校验和基础限流，并保管 GitHub Token，再调用 GitHub API。最终反馈会落到 GitHub 仓库的 Issues 里，可以追踪和分派。四个要点请记住：核心对局数据留在用户浏览器；只有用户主动提交反馈时才经过后端；没有传统应用数据库；它也不是一个纯前端静态网站。"},
+  {t:"1.5 分钟", n:"这是验收状态。左边是已经确认通过的部分：MVP 核心流程完整可用，ESLint 零告警，TypeScript 类型检查和生产构建都能通过，之前的构建和部署路径问题已经修复，文档和交接资料也准备好了。右边是我们共同接受的 MVP 边界：暂不支持自定义玩家昵称，暂不区分远征投票和组队投票，暂不开放首页的继续对局入口。我要明确一句话：这些边界不是被遗忘的缺陷，而是记录在案、共同接受的取舍，不构成当前版本结项的阻塞项。"},
+  {t:"1.5 分钟", n:"关于可用性测试。方法上是一个小闭环：Plan，Run，然后 Analyse、document and present。一个典型的任务场景是：你和四位朋友准备开始游戏，请创建对局并记录第一轮任务。我们会测四件事：是否完成、完成时间、错误和求助次数，以及用户的原话。现在要如实说明：正式的 usability test 尚未执行，它属于转交之后的验证 backlog，所以这里不呈现任何测试数据。工程验收回答的是软件是否正确运行，usability test 回答的是用户能否独立完成目标，两者不能互相替代。"},
+  {t:"2 分钟（含成员回应）", n:"这个项目是四个人做出来的。我担任 Product Owner、项目发起人和第一版建立者；Yumi 是 Scrum Master，同时也是开发贡献者；zhji0051 负责新手导览、动效、投票可视化和任务回顾；hao-hao-3070 负责身份标签和座位信息。补充一点，Yumi Bai 和 GitHub 上的 b1hcimcim526-gif 是同一个人。我们共同实践了产品定义与 MVP 取舍、UCD 与交互设计、Next.js 全栈开发、Git 与 PR 协作，以及测试、部署、文档和维护。下面这个问题请每位成员用一句话回答，二十到三十秒即可，我不替大家总结感受。"},
+  {t:"1 分钟", n:"为什么是 Yumi。她在这个项目里担任 Scrum Master，完整了解项目状态和团队的推进过程；在组织节奏、跟进任务和承担责任这几件事上她一直很稳定；从延续性的角度看，她是下一阶段最合适的持续维护者。同时必须讲清楚三件事：第一，这个项目是四个人的共同成果；第二，今天转交的是后续的决策权和维护责任；第三，转交不代表贡献归属发生任何改变，每个人做过的部分仍然是每个人的。"},
+  {t:"2 分钟（含正式交接）", n:"进入正式环节。我先做 Product Owner 声明：我确认当前版本已完成约定的 MVP 核心流程，已知范围和遗留事项已经记录，工程检查与生产构建通过；因此我确认当前项目阶段验收通过，并将后续项目所有权转交给 Yumi。接下来请 Yumi 宣读接受声明。之后我们确认三点：当前 MVP 项目阶段正式结束；后续维护与下一轮迭代由 Yumi 决定；我以后如果参与，将以协作者或顾问身份参与。五项检查全部通过，会议到此结束，其余讨论我们会后继续。"}
+];
+
+const slides=[...document.querySelectorAll('.slide')];
+let i=0, notesOn=false, t0=null, tick=null;
+const bar=document.getElementById('bar');
+
+function render(){
+  slides.forEach((s,k)=>s.classList.toggle('active',k===i));
+  bar.style.width=((i+1)/slides.length*100)+'%';
+  document.getElementById('nt').textContent=NOTES[i].n;
+  document.getElementById('meta').textContent='本页目标时长：'+NOTES[i].t+'　·　'+(i+1)+' / '+slides.length;
+}
+function go(d){i=Math.min(slides.length-1,Math.max(0,i+d));render();}
+
+function fit(){
+  const s=Math.min(window.innerWidth/(1280+(notesOn?400:0)), window.innerHeight/720)*0.96;
+  const deck=document.getElementById('deck');
+  deck.style.transform='scale('+s+')';
+  document.getElementById('stage').style.paddingRight=notesOn?'400px':'0';
+}
+function toggleTimer(){
+  if(tick){clearInterval(tick);tick=null;return;}
+  t0=t0||Date.now();
+  tick=setInterval(()=>{
+    const e=Math.floor((Date.now()-t0)/1000);
+    document.getElementById('timer').textContent=
+      String(Math.floor(e/60)).padStart(2,'0')+':'+String(e%60).padStart(2,'0');
+  },250);
+}
+
+addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();go(1);}
+  else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(-1);}
+  else if(e.key.toLowerCase()==='s'){notesOn=!notesOn;document.getElementById('notes').classList.toggle('on',notesOn);fit();}
+  else if(e.key.toLowerCase()==='t'){toggleTimer();}
+  else if(e.key.toLowerCase()==='f'){document.documentElement.requestFullscreen?.();}
+  else if(e.key==='Home'){i=0;render();}
+  else if(e.key==='End'){i=slides.length-1;render();}
+});
+addEventListener('resize',fit);
+render();fit();
+</script>
+</body>
+</html>
