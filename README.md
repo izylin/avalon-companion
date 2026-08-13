@@ -2,6 +2,8 @@
 
 配合线下阿瓦隆桌游使用的移动端/网页记录工具。用于记录组队、投票与任务结果，对局数据只保存在本机浏览器（`localStorage`）；用户可主动通过反馈入口提交问题或建议。
 
+当前维护负责人：[@yumi-526](https://github.com/yumi-526)（Yumi）。第一阶段已经完成验收和所有权交接；后续部署、Issue 排期与发布决策由维护负责人管理。
+
 ## 产品定位
 
 一款配合线下阿瓦隆游戏使用的记录工具，帮助玩家在线下对局中记录身份标签、投票及任务结果，支持中途保存进度与赛后复盘查看。
@@ -80,6 +82,8 @@ npm run lint     # ESLint 检查
 
 第一阶段的立项背景、原始需求、会议决策、MVP 测试和维护交接已从飞书整理到 [`docs/project-archive/`](docs/project-archive/README.md)。这些资料用于解释项目如何形成；当前产品状态仍以本 README 与 `main` 分支代码为准。
 
+仓库转移后需要由新负责人重新确认 GitHub Pages、GitBook、Vercel 和反馈接口所使用的仓库地址、权限及环境变量。具体步骤见 [`docs/DEPLOYMENT_HANDOVER.md`](docs/DEPLOYMENT_HANDOVER.md)。
+
 ## 反馈收集配置
 
 右下角的「反馈」按钮会截取当前页面，允许用户框选、画箭头、自由圈画或遮盖敏感区域，然后将文字、标注截图与页面上下文创建为 GitHub Issue。复制 `.env.example` 为 `.env.local` 并填写：
@@ -91,3 +95,7 @@ FEEDBACK_GITHUB_BRANCH=main
 ```
 
 令牌须为该仓库的 fine-grained personal access token，并授予 **Issues: Read and write** 和 **Contents: Read and write**。截图保存在仓库的 `feedback-attachments/` 中，Issue 会链接到该图片；部署前请确认该仓库的可见性与反馈截图的隐私预期一致。未配置令牌时，客户端会显示提交失败，不会假装已收集反馈。
+
+## License
+
+本项目以 [MIT License](LICENSE) 开源。版权归 Avalon Notepad contributors 共同所有；仓库维护权转交不会改变既有贡献归属。

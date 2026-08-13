@@ -18,7 +18,7 @@ Avalon Companion 的学习型 MVP 已形成完整对局闭环，并积累了需�
 
 ## 维护角色
 
-### Yumi：维护负责人
+### Yumi（GitHub：`yumi-526`）：维护负责人
 
 - 对仓库设置、成员权限、Issue/PR 合并、发布和安全问题作最终维护决定。
 - 决定是否启动下一阶段，以及如何排列 Backlog。
@@ -68,7 +68,8 @@ Avalon Companion 的学习型 MVP 已形成完整对局闭环，并积累了需�
 
 ## 交接检查清单
 
-- [ ] Yumi 接受仓库所有权或取得约定的最终管理权限
+- [ ] Yumi 接受 GitHub 仓库转移并取得最终管理权限
+- [ ] Yumi 按 [`../DEPLOYMENT_HANDOVER.md`](../DEPLOYMENT_HANDOVER.md) 完成部署复核
 - [ ] Linus 按约定保留 Collaborator 权限
 - [ ] 核对仓库默认分支、分支保护、Secrets、Actions 和部署设置
 - [ ] 处理仍打开的 PR 和失败的 CI
