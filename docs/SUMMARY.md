@@ -19,3 +19,4 @@
 - [会议决策时间线](project-archive/03-meeting-timeline.md)
 - [MVP 测试记录](project-archive/04-mvp-test-record.md)
 - [项目复盘与维护交接](project-archive/05-retrospective-and-handover.md)
+- [部署交接清单](DEPLOYMENT_HANDOVER.md)
