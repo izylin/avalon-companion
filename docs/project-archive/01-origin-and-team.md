@@ -15,7 +15,7 @@
 | Leying（刘乐颖） | Developer | 产品、前端 |
 | Serena（季祉言） | Developer | 前端、数据相关方向 |
 
-> GitHub 中 `Yumi Bai` 与 `b1hcimcim526-gif` 是 Yumi 使用过的两个贡献身份。提交账号只能说明某次提交由哪个身份写入，不能单独替代项目角色和发起过程的记录。
+> Yumi 的仓库维护账号为 `yumi-526`。历史提交中出现的 `Yumi Bai` 与 `b1hcimcim526-gif` 仅作为既有贡献身份保留；提交身份不能单独替代项目角色和发起过程的记录。
 
 ## 协作机制
 
